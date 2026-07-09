@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>タスク管理</title>
+<style>
+  :root{
+    --bg:#f5f6f8;
+    --panel:#ffffff;
+    --panel2:#f0f1f4;
+    --line:#dde1e6;
+    --text:#262a30;
+    --sub:#7a808a;
+    --accent:#3a6df0;
+    --accent2:#5c84f5;
+    --high:#e8453c;
+    --mid:#e0962a;
+    --low:#2f9c7c;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:"Hiragino Sans","Yu Gothic",sans-serif;
+    padding:32px 16px 80px;
+  }
+  .wrap{max-width:720px;margin:0 auto;}
+  h1{
+    font-size:22px;
+    letter-spacing:.06em;
+    margin:0 0 4px;
+    font-weight:700;
+  }
+  .sub{color:var(--sub);font-size:13px;margin-bottom:20px;}
+
+  /* Tabs */
+  .tabs{
+    display:flex;
+    gap:4px;
+    background:var(--panel2);
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:4px;
+    margin-bottom:24px;
+  }
+  .tab{
+    flex:1;
+    text-align:center;
+    padding:10px 0;
+    border-radius:9px;
+    cursor:pointer;
+    font-size:14px;
+    font-weight:700;
+    color:var(--sub);
+    user-select:none;
+  }
+  .tab.active{
+    background:var(--panel);
+    color:var(--accent);
+    box-shadow:0 1px 3px rgba(0,0,0,.08);
+  }
+  .tab .count{
+    display:inline-block;
+    margin-left:6px;
+    font-size:11px;
+    color:var(--sub);
+  }
+
+  .panel{display:none;}
+  .panel.active{display:block;}
+
+  .form{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:18px;
+  }
+  .row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px;}
+  .field{flex:1;min-width:140px;display:flex;flex-direction:column;gap:4px;}
+  .field.small{flex:0 0 130px;min-width:130px;}
+  label{font-size:11px;color:var(--sub);letter-spacing:.04em;}
+  input[type=text],input[type=date],select,textarea{
+    background:var(--panel2);
+    border:1px solid var(--line);
+    color:var(--text);
+    border-radius:8px;
+    padding:8px 10px;
+    font-size:14px;
+    font-family:inherit;
+    outline:none;
+  }
+  input:focus,select:focus,textarea:focus{border-color:var(--accent);}
+  textarea{resize:vertical;min-height:38px;}
+
+  .priority-select{display:flex;gap:6px;}
+  .pbtn{
+    flex:1;
+    padding:8px 0;
+    text-align:center;
+    border-radius:8px;
+    border:1px solid var(--line);
+    background:var(--panel2);
+    color:var(--sub);
+    cursor:pointer;
+    font-size:13px;
+    user-select:none;
+  }
+  .pbtn[data-p="high"].active{background:var(--high);color:#fff;border-color:var(--high);font-weight:700;}
+  .pbtn[data-p="mid"].active{background:var(--mid);color:#fff;border-color:var(--mid);font-weight:700;}
+  .pbtn[data-p="low"].active{background:var(--low);color:#fff;border-color:var(--low);font-weight:700;}
+
+  .addbtn{
+    margin-top:6px;
+    width:100%;
+    padding:11px;
+    border:none;
+    border-radius:8px;
+    background:var(--accent);
+    color:#fff;
+    font-weight:700;
+    font-size:14px;
+    cursor:pointer;
+    letter-spacing:.03em;
+  }
+  .addbtn:hover{background:var(--accent2);}
+
+  .formbtns{display:flex;gap:8px;margin-top:6px;}
+  .formbtns .addbtn{margin-top:0;}
+  .cancelbtn{
+    flex:0 0 110px;
+    padding:11px;
+    border:1px solid var(--line);
+    border-radius:8px;
+    background:var(--panel);
+    color:var(--sub);
+    font-weight:700;
+    font-size:14px;
+    cursor:pointer;
+  }
+  .cancelbtn:hover{border-color:var(--sub);}
+
+  .list{display:flex;flex-direction:column;gap:10px;}
+  .empty{
+    text-align:center;
+    color:var(--sub);
+    padding:50px 0;
+    font-size:14px;
+    border:1px dashed var(--line);
+    border-radius:14px;
+  }
+
+  .card{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-left:4px solid var(--line);
+    border-radius:10px;
+    padding:14px 16px;
+    display:flex;
+    align-items:flex-start;
+    gap:14px;
+    transition:opacity .25s ease, transform .25s ease;
+    cursor:pointer;
+  }
+  .card.high{border-left-color:var(--high);}
+  .card.mid{border-left-color:var(--mid);}
+  .card.low{border-left-color:var(--low);}
+  .card.removing{opacity:0;transform:translateX(12px);}
+  .card.is-overdue{background:#fff5f5;border-color:#f5c0be;}
+  .card.is-soon{background:#fffbf0;border-color:#f5e2b0;}
+
+  .check{
+    flex:0 0 auto;
+    width:24px;height:24px;
+    border-radius:50%;
+    border:2px solid var(--sub);
+    background:transparent;
+    cursor:pointer;
+    margin-top:2px;
+  }
+  .check:hover{border-color:var(--low);}
+
+  .body{flex:1;min-width:0;}
+  .toprow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px;}
+  .tag{
+    font-size:11px;
+    padding:2px 8px;
+    border-radius:20px;
+    font-weight:700;
+    letter-spacing:.03em;
+  }
+  .tag.high{background:rgba(232,69,60,.12);color:var(--high);}
+  .tag.mid{background:rgba(224,150,42,.14);color:var(--mid);}
+  .tag.low{background:rgba(47,156,124,.12);color:var(--low);}
+  .company{font-weight:700;font-size:14px;}
+  .deadline{
+    margin-left:auto;
+    font-size:12px;
+    color:var(--sub);
+    white-space:nowrap;
+  }
+  .deadline.overdue{color:var(--high);font-weight:700;}
+  .deadline.soon{color:#c47c00;font-weight:700;}
+  .content{font-size:14px;color:var(--text);line-height:1.5;white-space:pre-wrap;}
+  .del{
+    flex:0 0 auto;
+    background:none;border:none;color:var(--sub);
+    cursor:pointer;font-size:12px;padding:2px 4px;
+  }
+  .del:hover{color:var(--high);}
+  .editing-hint{font-size:11px;color:var(--sub);margin-bottom:14px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>TASK BOARD</h1>
+  <div class="sub">完了したタスクは消えます。優先度の高い順に自動で並びます。</div>
+
+  <div class="tabs">
+    <div class="tab active" data-tab="list">タスク一覧<span class="count" id="countList"></span></div>
+    <div class="tab" data-tab="add">タスク追加</div>
+  </div>
+
+  <div class="panel active" id="panel-list">
+    <div class="list" id="list"></div>
+  </div>
+
+  <div class="panel" id="panel-add">
+    <div class="form">
+      <div class="editing-hint" id="editingHint" style="display:none;">既存タスクを編集中です</div>
+      <div class="row">
+        <div class="field small">
+          <label>期限</label>
+          <input type="date" id="deadline">
+        </div>
+        <div class="field">
+          <label>会社名</label>
+          <input type="text" id="company" placeholder="例）株式会社〇〇">
+        </div>
+      </div>
+      <div class="row">
+        <div class="field">
+          <label>内容</label>
+          <textarea id="content" placeholder="タスクの内容を入力"></textarea>
+        </div>
+      </div>
+      <div class="row">
+        <div class="field">
+          <label>備考（任意・一覧には表示されません）</label>
+          <input type="text" id="extra" placeholder="補足メモなど">
+        </div>
+      </div>
+      <div class="row">
+        <div class="field">
+          <label>優先度</label>
+          <div class="priority-select" id="prioritySelect">
+            <div class="pbtn" data-p="high">高</div>
+            <div class="pbtn active" data-p="mid">中</div>
+            <div class="pbtn" data-p="low">低</div>
+          </div>
+        </div>
+      </div>
+      <div class="formbtns">
+        <button class="cancelbtn" id="cancelBtn" style="display:none;">キャンセル</button>
+        <button class="addbtn" id="addBtn">タスクを追加</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+let tasks = [];
+let idCounter = 1;
+let currentPriority = 'mid';
+let editingId = null;
+let storageReady = false;
+
+const STORAGE_KEY = 'task_board_data_v1';
+
+async function loadTasks(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(raw){
+      const data = JSON.parse(raw);
+      tasks = data.tasks || [];
+      idCounter = tasks.reduce((max,t)=>Math.max(max, t.id), 0) + 1;
+    }
+  }catch(e){
+    tasks = [];
+  }
+  storageReady = true;
+  renderList();
+}
+
+async function saveTasks(){
+  try{
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ tasks }));
+  }catch(e){
+    console.error('保存に失敗しました', e);
+    alert('保存に失敗しました。ブラウザの設定をご確認ください。');
+  }
+}
+
+const priorityRank = { high: 0, mid: 1, low: 2 };
+const priorityLabel = { high: '高', mid: '中', low: '低' };
+
+// Tabs
+document.querySelectorAll('.tab').forEach(tab=>{
+  tab.addEventListener('click', ()=>{
+    if(tab.dataset.tab === 'add' && editingId === null){
+      resetForm();
+    }
+    switchTab(tab.dataset.tab);
+  });
+});
+
+function switchTab(name){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active', t.dataset.tab===name));
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('panel-'+name).classList.add('active');
+}
+
+// Priority buttons
+document.querySelectorAll('.pbtn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.pbtn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    currentPriority = btn.dataset.p;
+  });
+});
+
+document.getElementById('addBtn').addEventListener('click', ()=>{
+  const deadline = document.getElementById('deadline').value;
+  const company = document.getElementById('company').value.trim();
+  const content = document.getElementById('content').value.trim();
+  const extra = document.getElementById('extra').value.trim();
+
+  if(!company || !content){
+    alert('会社名と内容は必須です');
+    return;
+  }
+
+  if(editingId !== null){
+    const t = tasks.find(t=>t.id === editingId);
+    if(t){
+      t.deadline = deadline;
+      t.company = company;
+      t.content = content;
+      t.extra = extra;
+      t.priority = currentPriority;
+    }
+  }else{
+    tasks.push({
+      id: idCounter++,
+      deadline, company, content, extra,
+      priority: currentPriority
+    });
+  }
+
+  resetForm();
+  renderList();
+  saveTasks();
+  switchTab('list');
+});
+
+document.getElementById('cancelBtn').addEventListener('click', ()=>{
+  resetForm();
+  switchTab('list');
+});
+
+function resetForm(){
+  editingId = null;
+  document.getElementById('deadline').value = '';
+  document.getElementById('company').value = '';
+  document.getElementById('content').value = '';
+  document.getElementById('extra').value = '';
+  currentPriority = 'mid';
+  document.querySelectorAll('.pbtn').forEach(b=>b.classList.toggle('active', b.dataset.p==='mid'));
+  document.getElementById('addBtn').textContent = 'タスクを追加';
+  document.getElementById('cancelBtn').style.display = 'none';
+  document.getElementById('editingHint').style.display = 'none';
+}
+
+function startEdit(id){
+  const t = tasks.find(t=>t.id === id);
+  if(!t) return;
+  editingId = id;
+  document.getElementById('deadline').value = t.deadline || '';
+  document.getElementById('company').value = t.company;
+  document.getElementById('content').value = t.content;
+  document.getElementById('extra').value = t.extra || '';
+  currentPriority = t.priority;
+  document.querySelectorAll('.pbtn').forEach(b=>b.classList.toggle('active', b.dataset.p===t.priority));
+  document.getElementById('addBtn').textContent = '変更を保存';
+  document.getElementById('cancelBtn').style.display = 'block';
+  document.getElementById('editingHint').style.display = 'block';
+  switchTab('add');
+}
+
+function formatDeadline(d){
+  if(!d) return '期限なし';
+  const date = new Date(d + 'T00:00:00');
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  const diff = Math.round((date - today)/86400000);
+  const label = date.toLocaleDateString('ja-JP', {month:'numeric', day:'numeric'});
+  if(diff < 0) return label + '（期限切れ）';
+  if(diff === 0) return label + '（今日）';
+  if(diff === 1) return label + '（明日）';
+  return label;
+}
+
+function renderList(){
+  const list = document.getElementById('list');
+  list.innerHTML = '';
+
+  document.getElementById('countList').textContent = tasks.length ? `(${tasks.length})` : '';
+
+  if(!storageReady){
+    list.innerHTML = '<div class="empty">読み込み中...</div>';
+    return;
+  }
+
+  if(tasks.length === 0){
+    list.innerHTML = '<div class="empty">タスクはありません。「タスク追加」タブから追加してください。</div>';
+    return;
+  }
+
+  const sorted = [...tasks].sort((a,b)=>{
+    if(priorityRank[a.priority] !== priorityRank[b.priority]){
+      return priorityRank[a.priority] - priorityRank[b.priority];
+    }
+    if(a.deadline && b.deadline) return a.deadline.localeCompare(b.deadline);
+    if(a.deadline) return -1;
+    if(b.deadline) return 1;
+    return a.id - b.id;
+  });
+
+  sorted.forEach(task=>{
+    const card = document.createElement('div');
+
+    const today = new Date(); today.setHours(0,0,0,0);
+    let deadlineStatus = 'none';
+    if(task.deadline){
+      const date = new Date(task.deadline+'T00:00:00');
+      const diff = Math.round((date - today)/86400000);
+      if(diff < 0) deadlineStatus = 'overdue';
+      else if(diff <= 1) deadlineStatus = 'soon';
+    }
+
+    card.className = 'card ' + task.priority
+      + (deadlineStatus==='overdue' ? ' is-overdue' : '')
+      + (deadlineStatus==='soon' ? ' is-soon' : '');
+    card.dataset.id = task.id;
+
+    const dlClass = deadlineStatus==='overdue' ? 'overdue' : deadlineStatus==='soon' ? 'soon' : '';
+
+    card.innerHTML = `
+      <button class="check" title="完了"></button>
+      <div class="body">
+        <div class="toprow">
+          <span class="tag ${task.priority}">${priorityLabel[task.priority]}</span>
+          <span class="company">${escapeHtml(task.company)}</span>
+          <span class="deadline ${dlClass}">${formatDeadline(task.deadline)}</span>
+        </div>
+        <div class="content">${escapeHtml(task.content)}</div>
+      </div>
+      <button class="del" title="削除">✕</button>
+    `;
+
+    card.querySelector('.check').addEventListener('click', (e)=>{
+      e.stopPropagation();
+      completeTask(task.id);
+    });
+    card.querySelector('.del').addEventListener('click', (e)=>{
+      e.stopPropagation();
+      completeTask(task.id);
+    });
+    card.addEventListener('click', ()=> startEdit(task.id));
+
+    list.appendChild(card);
+  });
+}
+
+function completeTask(id){
+  const card = document.querySelector(`.card[data-id="${id}"]`);
+  if(card){
+    card.classList.add('removing');
+    setTimeout(()=>{
+      tasks = tasks.filter(t=>t.id !== id);
+      renderList();
+      saveTasks();
+    }, 220);
+  }
+}
+
+function escapeHtml(str){
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+loadTasks();
+</script>
+</body>
+</html>
